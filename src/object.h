@@ -56,6 +56,7 @@ public:
             return -1;
         }
     }
+
     glm::vec3 shading(const glm::vec3& v, const glm::vec3& lightPosition, const glm::vec3& n, const glm::vec3& intersectPos) {
         float p = 500.0;
         float I_i = 1.0;
@@ -66,16 +67,18 @@ public:
         glm::vec3 g = glm::vec3(0,0,0) - intersectPos;
         glm::vec3 l = glm::normalize(lightPosition - intersectPos);
         glm::vec3 h = glm::normalize(g + l);
-        glm::vec3 L = k_a*I_a + k_d*I_i*static_cast<float>(fmax(0, dot(n,l))) + k_s*I_i*static_cast<float>(pow(fmax(0,dot(n,h)),p));
+        glm::vec3 c =  k_a*I_a;
+
+       c = c + k_d*I_i*static_cast<float>(fmax(0, dot(n,l))) + k_s*I_i*static_cast<float>(pow(fmax(0,dot(n,h)),p));
         for (int i = 0; i < 3; i++) {
-            if (L[i] < 0) {
-                L[i] = 0;
+            if (c[i] < 0) {
+                c[i] = 0;
             }
-            else if (L[i] > 1) {
-                L[i] = 1;
+            else if (c[i] > 1) {
+                c[i] = 1;
             }
         }
-        return L;
+        return c;
     }
 private:
     glm::vec3(color);
