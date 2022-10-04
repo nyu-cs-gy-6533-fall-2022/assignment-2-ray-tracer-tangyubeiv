@@ -17,3 +17,5 @@ find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(${PROJECT_NAME}_bin PUBLIC OpenMP::OpenMP_CXX)
 endif()
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
