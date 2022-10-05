@@ -57,12 +57,35 @@ int main() {
 
     auto lightPos = e - cameraRight*static_cast<float>(1.9) + cameraUp*static_cast<float>(1.9) ;
 
-    std::vector<Sphere> spheres;
-    spheres.push_back(Sphere(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(1.0, 0.5, 0.0)));
-    spheres.push_back(Sphere(glm::vec3(1.0, 0.0, -5.5), 0.5, glm::vec3(0.0, 1.0, 0.5)));
-    spheres.push_back(Sphere(glm::vec3(-1.0, 0.5, -3.0), 0.2, glm::vec3(0.0f, 0.5, 1.0)));
-    spheres.push_back(Sphere(glm::vec3(-0.5f, -0.5f, -2.5f), 0.2, glm::vec3(1.0, 0.5, 0.5)));
+    std::vector<Object*> myObjects;
+    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(1.0, 0.5, 0.0));
+    Sphere sphereB(glm::vec3(1.0, 0.0, -5.5), 0.5, glm::vec3(0.0, 1.0, 0.5));
+    Sphere sphereC(glm::vec3(-1.0, 0.5, -3.0), 0.2, glm::vec3(0.0f, 0.5, 1.0));
+    Sphere sphereD(glm::vec3(-0.5f, -0.5f, -2.5f), 0.2, glm::vec3(1.0, 0.5, 0.5));
+    myObjects.push_back(&sphereA);
+    myObjects.push_back(&sphereB);
+    myObjects.push_back(&sphereC);
+    myObjects.push_back(&sphereD);
 
+    Plane planeA(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.75, 0.75, 0.75));
+    Plane planeB(glm::vec3(-1.0, 0.0, 0.0), glm::vec3(2.0, 0.0, 0.0), glm::vec3(0.75, 0.75, 0.75));
+    Plane planeC(glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 0.0, -10.0), glm::vec3(0.75, 0.75, 0.75));
+    Plane planeD(glm::vec3(1.0, 0.0, 0.0), glm::vec3(-3.0, 0.0, 0.0), glm::vec3(0.75, 0.75, 0.75));
+    Plane planeE(glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 2.5, 0.0), glm::vec3(0.75, 0.75, 0.75));
+    Plane planeF(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 0.0, 2.0), glm::vec3(0.75, 0.75, 0.75));
+
+    myObjects.push_back(&planeA);
+    myObjects.push_back(&planeB);
+    myObjects.push_back(&planeC);
+    myObjects.push_back(&planeD);
+    myObjects.push_back(&planeE);
+    myObjects.push_back(&planeF);
+
+
+    glm::vec3 foo(0.0, 1.0, 0.0);
+//    Object *mySphere = myObjects[0];
+//    std::cout << mySphere->intersect(foo, foo, foo, foo) << std::endl;
+    //std::cout << myObjects[0]->intersect(foo, foo, foo, foo) << std::endl;
 
     // image data
     std::vector<glm::u8vec3> image;
@@ -75,6 +98,78 @@ int main() {
     // TODO    Compute ray-object intersections etc.
     // TODO    Store color per pixel in image vector
 
+//    for (int j = dimy-1; j >= 0; --j) {
+//        for (int i = 0; i < dimx; ++i) {
+//            auto u = glm::vec3(left + (right-left)*(i+0.5)/dimx);
+//            auto v = glm::vec3(-bottom + (-top+bottom)*(j+0.5)/dimy);
+//            auto r = glm::normalize(-cameraDirection + u*cameraRight + v*cameraUp - e);
+//
+//            glm::vec3 intersectPos(0, 0, 0);
+//            glm::vec3 normal(0, 0, 0);
+//            glm::vec3 curIntersectPos(0, 0, 0);
+//            glm::vec3 curNormal(0, 0, 0);
+//            float min = 10;
+//            int nearestSphere = -1;
+//            bool intersects = false;
+//
+//            // Loop through spheres checking for intersection with ray direction
+//            for (int k = 0; k < myObjects.size(); k++) {
+//                float t = myObjects[k]->intersect(e, r, intersectPos, normal);
+//                if (t != -1) {
+//                    intersects = true;
+//                    if (t < min) {
+//                        min = t;
+//                        nearestSphere = k;
+//                        curIntersectPos = intersectPos;
+//                        curNormal = normal;
+//                    }
+//                }
+//            }
+//            // Display spheres, add shading
+//            if (!intersects) {
+//                auto background_color = glm::vec3(0.5, 0.0, 1.0);
+//                image[j*dimx + i] = static_cast<glm::u8vec3>(background_color*glm::vec3(255));
+//            }
+//            else {
+//                float p = 500.0;
+//                float I_i = 1.0;
+//                float I_a = 0.2;
+//                glm::vec3 k_a = myObjects[nearestSphere]->Color();
+//                glm::vec3 k_d = k_a;
+//                glm::vec3 k_s(1.0, 1.0, 1.0);
+//                glm::vec3 g = glm::vec3(0,0,0) - curIntersectPos;
+//                glm::vec3 l = glm::normalize(lightPos - curIntersectPos);
+//                glm::vec3 h = glm::normalize(g + l);
+//                glm::vec3 c =  k_a*I_a;
+//                bool intersectsShadow = false;
+//                for (int k = 0; k < 4; k++) {
+//                    if (k != nearestSphere) {
+//                        float m = 0.01;
+//                        glm::vec3 shadowRay = m * l;
+//                        float t = myObjects[k]->intersect(curIntersectPos, shadowRay, normal, curIntersectPos);
+//                        if (t != -1) {
+//                            intersectsShadow = true;
+//                            break;
+//                        }
+//                    }
+//                }
+//                if (!intersectsShadow) {
+//                    c = c + k_d*I_i*static_cast<float>(fmax(0, dot(curNormal, l))) + k_s * I_i * static_cast<float>(pow(fmax(0, dot(curNormal, h)), p));
+//                }
+//                // Clamp pixel values
+//                for (int i = 0; i < 3; i++) {
+//                    if (c[i] < 0) {
+//                        c[i] = 0;
+//                    }
+//                    else if (c[i] > 1) {
+//                        c[i] = 1;
+//                    }
+//                }
+//                image[j*dimx + i] = static_cast<glm::u8vec3>(c*glm::vec3(255));
+//            }
+//        }
+//    }
+
     for (int j = dimy-1; j >= 0; --j) {
         for (int i = 0; i < dimx; ++i) {
             auto u = glm::vec3(left + (right-left)*(i+0.5)/dimx);
@@ -85,18 +180,18 @@ int main() {
             glm::vec3 normal(0, 0, 0);
             glm::vec3 curIntersectPos(0, 0, 0);
             glm::vec3 curNormal(0, 0, 0);
-            float min = 10;
-            int nearestSphere = -1;
+            float min = 1000;
+            int nearestObj = -1;
             bool intersects = false;
 
             // Loop through spheres checking for intersection with ray direction
-            for (int k = 0; k < spheres.size(); k++) {
-                float t = spheres[k].intersect(e, r, intersectPos, normal);
+            for (int k = 0; k < myObjects.size(); k++) {
+                float t = myObjects[k]->intersect("Intersection", e, r, intersectPos, normal);
                 if (t != -1) {
                     intersects = true;
                     if (t < min) {
                         min = t;
-                        nearestSphere = k;
+                        nearestObj = k;
                         curIntersectPos = intersectPos;
                         curNormal = normal;
                     }
@@ -107,11 +202,16 @@ int main() {
                 auto background_color = glm::vec3(0.5, 0.0, 1.0);
                 image[j*dimx + i] = static_cast<glm::u8vec3>(background_color*glm::vec3(255));
             }
+//            else {
+//                image[j*dimx + i] = static_cast<glm::u8vec3>(myObjects[nearestObj]->Color()*glm::vec3(255));
+//            }
             else {
+                //image[j*dimx + i] = static_cast<glm::u8vec3>(myObjects[nearestObj]->Color()*glm::vec3(255));
                 float p = 500.0;
                 float I_i = 1.0;
                 float I_a = 0.2;
-                glm::vec3 k_a = spheres[nearestSphere].Color();
+                glm::vec3 k_a = myObjects[nearestObj]->Color();
+                myObjects[nearestObj]->Color();
                 glm::vec3 k_d = k_a;
                 glm::vec3 k_s(1.0, 1.0, 1.0);
                 glm::vec3 g = glm::vec3(0,0,0) - curIntersectPos;
@@ -119,12 +219,12 @@ int main() {
                 glm::vec3 h = glm::normalize(g + l);
                 glm::vec3 c =  k_a*I_a;
                 bool intersectsShadow = false;
-                for (int k = 0; k < spheres.size(); k++) {
-                    if (k != nearestSphere) {
-                        float m = 0.01;
-                        glm::vec3 shadowRay = m * l;
-                        float t = spheres[k].intersect(curIntersectPos, shadowRay, normal, curIntersectPos);
-                        if (t != -1) {
+                // Calculate Shadows
+                for (int k = 0; k < 4; k++) {
+                    if (k != nearestObj) {
+                        glm::vec3 shadowRay = lightPos - curIntersectPos;
+                        float t = myObjects[k]->intersect("Shadow", curIntersectPos, shadowRay, curNormal, foo);
+                        if (t == 1) {
                             intersectsShadow = true;
                             break;
                         }
@@ -133,6 +233,7 @@ int main() {
                 if (!intersectsShadow) {
                     c = c + k_d*I_i*static_cast<float>(fmax(0, dot(curNormal, l))) + k_s * I_i * static_cast<float>(pow(fmax(0, dot(curNormal, h)), p));
                 }
+                //c = c + k_d*I_i*static_cast<float>(fmax(0, dot(curNormal, l))) + k_s * I_i * static_cast<float>(pow(fmax(0, dot(curNormal, h)), p));
                 // Clamp pixel values
                 for (int i = 0; i < 3; i++) {
                     if (c[i] < 0) {
@@ -146,7 +247,6 @@ int main() {
             }
         }
     }
-
     // write image data to PPM file
     return writeP6PPM((unsigned int) dimx, (unsigned int) dimy, image);
 
