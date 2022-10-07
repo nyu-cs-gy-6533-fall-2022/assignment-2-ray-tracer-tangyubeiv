@@ -122,19 +122,16 @@ glm::vec3 traceRay(std::vector<Object*> myObjects, glm::vec3 origin, glm::vec3 r
             if (!intersectsShadow) {
                 c += k_d * I_i * static_cast<float>(fmax(0, dot(curNormal, l)));
                 c += k_s * I_i * static_cast<float>(pow(fmax(0, dot(r_vec, v)), p));
-                //std::cout << c[0] << " " << c[1] << " " << c[2] << std::endl;
                 clamp(c);
-                if (recurDepth < 9) {
-                    if (myObjects[nearestObj]->Reflect()) {
-                        glm::vec3 reflectedRay = glm::reflect(-v, curNormal);
-                        c *= traceRay(myObjects, curIntersectPos+0.00001f*reflectedRay, reflectedRay, ++recurDepth);
-                    }
+            }
+            if (recurDepth < 10) {
+                if (myObjects[nearestObj]->Reflect()) {
+                    glm::vec3 reflectedRay = glm::reflect(-v, curNormal);
+                    c *= traceRay(myObjects, curIntersectPos+0.00001f*reflectedRay, reflectedRay, ++recurDepth);
                 }
-                else {
-                    return glm::vec3(1.0, 1.0, 1.0);
-                }
-
-        //    c = myObjects[nearestObj]->Color();
+            }
+            else {
+                return glm::vec3(1.0, 1.0, 1.0);
             }
         }
         return c;
