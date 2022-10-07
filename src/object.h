@@ -8,7 +8,7 @@
 
 class Object {
 public:
-	Object(glm::vec3 col, bool reflecting = false, float ambientFactor = 0.2f, float specExponent = 50.0f) { 
+	Object(glm::vec3 col, bool reflecting, float ambientFactor = 0.2f, float specExponent = 50.0f) {
 		color = col; 
 		reflect = reflecting;
 		ambient = ambientFactor; 
@@ -19,10 +19,10 @@ public:
 	// PURE VIRTUAL FUNCTION: has to be implemented in all child classes.
     virtual float intersect(std::string type, const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec3& intersectPos, glm::vec3& normal) = 0;
 	const glm::vec3& Color() { return color; };
-	float AmbientFactor() { std::cout << "Ambient Factor: " << ambient << std::endl; return ambient; };
+    const glm::vec3& newColor() { std::cout << color[0] << " " << color[1] << " " << color[2] << std::endl; return color; };
+	float AmbientFactor() { return ambient; };
 	float SpecularExponent() { return specularEx; };
 	bool Reflect() { return reflect; };
-
 private:
 	// object color
 	glm::vec3 color;
@@ -35,10 +35,11 @@ private:
 
 class Sphere:public Object {
 public:
-    Sphere(glm::vec3 c, double r, glm::vec3 col, bool reflecting = false, float ambientFactor = 0.2f, float specExponent = 50.0f): Object(col, reflecting = false, ambientFactor = 0.2f, specExponent = 50.0f) {
+    Sphere(glm::vec3 c, double r, glm::vec3 col, bool reflecting, float ambientFactor = 0.2f, float specExponent = 50.0f): Object(col, reflecting, ambientFactor = 0.2f, specExponent = 50.0f) {
         center = c;
         radius = r;
         color = col;
+        reflect = reflecting;
     }
     virtual float intersect(std::string type, const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec3& intersectPos, glm::vec3& normal) {
         glm::vec3 oc = rayOrigin - center;
@@ -47,8 +48,8 @@ public:
         auto c = glm::dot(oc, oc) - radius*radius;
         auto discriminant = b*b - 4*a*c;
         if (type == "Shadow") {
-            float t = fmax((glm::dot(-rayDir, oc) + sqrt(discriminant))/a,(glm::dot(-rayDir, oc) - sqrt(discriminant))/a);
-                if (t >= 0) {
+            float t = fmax((-b + pow(b*b - 4*a*c, 0.5))/(2*a),(-b - pow(b*b - 4*a*c, 0.5))/(2*a) );
+                if (t > 0) {
                     return 1;
                 }
                 else {
@@ -56,9 +57,9 @@ public:
                 }
             }
         if (discriminant >= 0) {
-            float t = std::min((glm::dot(-rayDir, oc) + sqrt(discriminant))/a,(glm::dot(-rayDir, oc) - sqrt(discriminant))/a);
+            float t = std::min((-b + pow(b*b - 4*a*c, 0.5))/(2*a),(-b - pow(b*b - 4*a*c, 0.5))/(2*a) );
             intersectPos = rayOrigin + t*rayDir;
-            normal = glm::normalize((intersectPos - center)*static_cast<float>(2));
+            normal = glm::normalize(intersectPos - center);
             return t;
         } else {
             return -1;
@@ -68,14 +69,16 @@ private:
     glm::vec3(color);
     glm::vec3(center);
     double radius;
+    bool reflect;
 };
 
 class Plane:public Object {
 public:
-    Plane(glm::vec3 normal, glm::vec3 point, glm::vec3 col, bool reflecting = false, float ambientFactor = 0.2f, float specExponent = 50.0f): Object(col, reflecting = false, ambientFactor = 0.2f, specExponent = 50.0f) {
+    Plane(glm::vec3 normal, glm::vec3 point, glm::vec3 col, bool reflecting, float ambientFactor = 0.2f, float specExponent = 50.0f): Object(col, reflecting, ambientFactor = 0.2f, specExponent = 50.0f) {
         n = normal;
         p = point;
         color = col;
+        reflect = reflecting;
     }
     virtual float intersect(std::string type, const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec3& intersectPos, glm::vec3& normal) {
         glm::vec3 po = p - rayOrigin;
@@ -98,5 +101,6 @@ private:
     glm::vec3(n);
     glm::vec3(p);
     glm::vec3(color);
+    bool reflect;
 };
 #endif
