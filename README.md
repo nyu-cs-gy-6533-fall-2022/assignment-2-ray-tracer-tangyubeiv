@@ -6,3 +6,6 @@ assignment-2-ray-tracer-tangyubei created by GitHub Classroom
 
 ## Spheres
 ![spheres](https://user-images.githubusercontent.com/34821850/194738715-c74ce2cd-3275-4cb6-a390-f68c90d925b5.png)
+
+## Shading
+![Shading](https://user-images.githubusercontent.com/34821850/194738728-5c125353-2cb6-4bd7-89fc-8d86c5793a35.png)
