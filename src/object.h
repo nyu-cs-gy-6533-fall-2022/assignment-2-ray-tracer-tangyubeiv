@@ -8,11 +8,14 @@
 
 class Object {
 public:
-	Object(glm::vec3 col, bool reflecting, float ambientFactor = 0.2f, float specExponent = 50.0f) {
+	Object(glm::vec3 col, bool reflecting, bool refracting, float refractIndex, float ambientFactor = 0.2f, float specExponent = 50.0f) {
 		color = col; 
 		reflect = reflecting;
 		ambient = ambientFactor; 
-		specularEx = specExponent; 
+		specularEx = specExponent;
+        refract = refracting;
+        eta = refractIndex;
+
 	};
 	// intersection function: returns the closest intersection point with the given ray (or a negative value, if none exists)
 	// output parameters: location of the intersection, object normal
@@ -23,6 +26,8 @@ public:
 	float AmbientFactor() { return ambient; };
 	float SpecularExponent() { return specularEx; };
 	bool Reflect() { return reflect; };
+    bool Refract() { return refract; };
+    float refractIndex() {return eta; };
 private:
 	// object color
 	glm::vec3 color;
@@ -31,15 +36,19 @@ private:
 	float specularEx;
 	// is this object reflecting?
 	bool reflect;
+    bool refract;
+    float eta;
 };
 
 class Sphere:public Object {
 public:
-    Sphere(glm::vec3 c, double r, glm::vec3 col, bool reflecting, float ambientFactor = 0.2f, float specExponent = 50.0f): Object(col, reflecting, ambientFactor = 0.2f, specExponent = 50.0f) {
+    Sphere(glm::vec3 c, double r, glm::vec3 col, bool reflecting, bool refracting, float refractIndex, float ambientFactor = 0.2f, float specExponent = 50.0f): Object(col, reflecting, refracting, refractIndex, ambientFactor = 0.2f, specExponent = 50.0f) {
         center = c;
         radius = r;
         color = col;
         reflect = reflecting;
+        refract = refracting;
+        eta = refractIndex;
     }
     virtual float intersect(std::string type, const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec3& intersectPos, glm::vec3& normal) {
         glm::vec3 oc = rayOrigin - center;
@@ -70,20 +79,24 @@ private:
     glm::vec3(center);
     double radius;
     bool reflect;
+    bool refract;
+    float eta;
 };
 
 class Plane:public Object {
 public:
-    Plane(glm::vec3 normal, glm::vec3 point, glm::vec3 col, bool reflecting, float ambientFactor = 0.2f, float specExponent = 50.0f): Object(col, reflecting, ambientFactor = 0.2f, specExponent = 50.0f) {
+    Plane(glm::vec3 normal, glm::vec3 point, glm::vec3 col, bool reflecting, bool refracting, float refractIndex, float ambientFactor = 0.2f, float specExponent = 50.0f): Object(col, reflecting, refracting, refractIndex, ambientFactor = 0.2f, specExponent = 50.0f) {
         n = normal;
         p = point;
         color = col;
         reflect = reflecting;
+        refract = refracting;
+        eta = refractIndex;
     }
     virtual float intersect(std::string type, const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec3& intersectPos, glm::vec3& normal) {
         glm::vec3 po = p - rayOrigin;
         float denom = dot(n, rayDir);
-        if (abs(denom) > 1e-6) {
+        if (abs(denom) > 0) {
             float t= dot(po,n)/denom;
             if (t >= 0) {
                 normal = n;
@@ -102,5 +115,7 @@ private:
     glm::vec3(p);
     glm::vec3(color);
     bool reflect;
+    bool refract;
+    float eta;
 };
 #endif
