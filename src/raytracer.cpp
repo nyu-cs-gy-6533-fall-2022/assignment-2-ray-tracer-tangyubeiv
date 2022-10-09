@@ -65,51 +65,6 @@ void clamp(glm::vec3& c) {
     }
     return;
 }
-//
-//glm::vec3 reflectedCol(std::vector<Object*> myObjects, glm::vec3 reflectedOrigin, glm::vec3 reflectedRay, int curObj, int depth) {
-//    if (depth == 10) {
-//        return glm::vec3(0.5, 0.0, 1.0);
-//    }
-//    glm::vec3 c(0.5, 0.0, 1.0);
-//    glm::vec3 intersectPos(0, 0, 0);
-//    glm::vec3 normal(0, 0, 0);
-//    glm::vec3 curIntersectPos(0, 0, 0);
-//    glm::vec3 curNormal(0, 0, 0);
-//    float min = 1000;
-//
-//    for (int k = 0; k < myObjects.size(); k++) {
-//        float t = myObjects[k]->intersect("Intersection", reflectedOrigin, reflectedRay, intersectPos, normal);
-//        if (t > 0) {
-//            if (t < min) {
-//                min = t;
-//                curObj = k;
-//                curIntersectPos = intersectPos;
-//                curNormal = normal;
-//            }
-//        }
-//    }
-//    c = myObjects[curObj]->Color();
-//    float I_a = myObjects[curObj]->AmbientFactor();
-//    if (myObjects[curObj]->Reflect()) {
-//        glm::vec3 newReflectedRay = glm::reflect(-glm::normalize(reflectedOrigin - curIntersectPos), curNormal);
-//        c = reflectedCol(myObjects, curIntersectPos+0.00001f*reflectedRay, newReflectedRay, curObj, depth + 1);
-//    }
-//    c *= I_a;
-//    glm::vec3 k_a = myObjects[curObj]->Color();
-//    glm::vec3 v = glm::normalize(reflectedOrigin - curIntersectPos);
-//    float p = myObjects[curObj]->SpecularExponent();
-//    float I_i = 1.0;
-//    glm::vec3 k_d = k_a;
-//    glm::vec3 k_s(1.0, 1.0, 1.0);
-//    glm::vec3 l = glm::normalize(lightPos - curIntersectPos);
-//    glm::vec3 r_vec = glm::reflect(-l, curNormal);
-//    c += k_s * I_i * static_cast<float>(pow(fmax(0, dot(r_vec, v)), p));
-//    clamp(c);
-//    c += k_d * I_i * static_cast<float>(fmax(0, dot(curNormal, l)));
-//    clamp(c);
-//    return c;
-//}
-
 
 glm::vec3 traceRay(std::vector<Object*> myObjects, glm::vec3 origin, glm::vec3 rayDir, int depth) {
     glm::vec3 c(0.5, 0.0, 1.0);
@@ -146,12 +101,11 @@ glm::vec3 traceRay(std::vector<Object*> myObjects, glm::vec3 origin, glm::vec3 r
                 float t = myObjects[k]->intersect("Shadow", curIntersectPos, shadowRay, foo, foo);
                 if (t == 1) {
                     intersectsShadow = true;
-                    c *= I_a;
+                    break;
                 }
             }
         }
-        if (!intersectsShadow) {
-            if (depth == 10) {
+            if (depth > 10) {
                 return glm::vec3(1.0,1.0,1.0);
             }
             else if (myObjects[nearestObj]->Reflect()){
@@ -167,10 +121,11 @@ glm::vec3 traceRay(std::vector<Object*> myObjects, glm::vec3 origin, glm::vec3 r
             glm::vec3 k_s(1.0, 1.0, 1.0);
             glm::vec3 l = glm::normalize(lightPos - curIntersectPos);
             glm::vec3 r_vec = glm::reflect(-l, curNormal);
-            c += k_s * I_i * static_cast<float>(pow(fmax(0, dot(r_vec, v)), p));
-            c += k_d * I_i * static_cast<float>(fmax(0, dot(curNormal, l)));
-            clamp(c);
-        }
+            if (!intersectsShadow) {
+                c += k_s * I_i * static_cast<float>(pow(fmax(0, dot(r_vec, v)), p));
+                c += k_d * I_i * static_cast<float>(fmax(0, dot(curNormal, l)));
+                clamp(c);
+            }
     }
     return c;
 }
@@ -182,7 +137,7 @@ int main() {
 
     // TODO Set up camera, light etc.
     std::vector<Object*> myObjects;
-    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(1.0, 0.50, 0.0), true, false, 0.3);
+    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(0.75, 0.70, 0.75), true, false, 0.3);
     Sphere sphereB(glm::vec3(1.0, 0.0, -5.5), 0.5, glm::vec3(0.0, 1.0, 0.5), false, false, 0.0);
     Sphere sphereC(glm::vec3(-1.0, 0.5, -3.0), 0.2, glm::vec3(0.0f, 0.5, 1.0), false, false, 0.0);
     Sphere sphereD(glm::vec3(-0.5f, -0.5f, -2.5f), 0.2, glm::vec3(1.0, 0.5, 0.5), false, false, 0.0);
