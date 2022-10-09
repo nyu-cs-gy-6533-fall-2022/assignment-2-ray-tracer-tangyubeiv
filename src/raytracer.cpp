@@ -14,6 +14,7 @@
 
 #define _USE_MATH_DEFINES
 
+//const float AIR_REFRACTIVE_INDEX = 1.0003;
 double aspectRatio = 4.0 / 3.0;
 
 const auto e = glm::vec3(0.0, 0.0, 0.0);
@@ -105,27 +106,42 @@ glm::vec3 traceRay(std::vector<Object*> myObjects, glm::vec3 origin, glm::vec3 r
                 }
             }
         }
-            if (depth > 10) {
-                return glm::vec3(1.0,1.0,1.0);
+        if (depth > 10) {
+            return glm::vec3(1.0,1.0,1.0);
+        }
+        if (myObjects[nearestObj]->Reflect()){
+            glm::vec3 reflectedRay = glm::reflect(-glm::normalize(origin - curIntersectPos), curNormal);
+            c = traceRay(myObjects, curIntersectPos+0.00001f*reflectedRay, reflectedRay, depth+1);
+        }
+        if (myObjects[nearestObj]->Refract()) {
+            // Assume refractive index of air is 1
+            float eta = 1/myObjects[nearestObj]->refractIndex();
+            glm::vec3 I = glm::normalize( curIntersectPos - origin);
+            float a = 1-pow(eta,2)*(1-pow(dot(curNormal,I),2));
+            if (a < 0) {
+                glm::vec3 internalReflectedRay = glm::reflect(I, curNormal);
+                c *= traceRay(myObjects, curIntersectPos+0.00001f*internalReflectedRay, internalReflectedRay, depth+1);
             }
-            else if (myObjects[nearestObj]->Reflect()){
-                glm::vec3 reflectedRay = glm::reflect(-glm::normalize(origin - curIntersectPos), curNormal);
-                c = traceRay(myObjects, curIntersectPos+0.00001f*reflectedRay, reflectedRay, depth+1);
+            else {
+                a = pow(a,0.5);
+                glm::vec3 refractedRay = (eta*dot(curNormal,I)-a)*curNormal-(eta*I);
+                c *= traceRay(myObjects, curIntersectPos+0.00001f*refractedRay, refractedRay, depth+1);
             }
-            glm::vec3 k_a = c;
-            c*=I_a;
-            glm::vec3 v = glm::normalize(origin - curIntersectPos);
-            float p = myObjects[nearestObj]->SpecularExponent();
-            float I_i = 1.0;
-            glm::vec3 k_d = k_a;
-            glm::vec3 k_s(1.0, 1.0, 1.0);
-            glm::vec3 l = glm::normalize(lightPos - curIntersectPos);
-            glm::vec3 r_vec = glm::reflect(-l, curNormal);
-            if (!intersectsShadow) {
-                c += k_s * I_i * static_cast<float>(pow(fmax(0, dot(r_vec, v)), p));
-                c += k_d * I_i * static_cast<float>(fmax(0, dot(curNormal, l)));
-                clamp(c);
-            }
+        }
+        glm::vec3 k_a = c;
+        c*=I_a;
+        glm::vec3 v = glm::normalize(origin - curIntersectPos);
+        float p = myObjects[nearestObj]->SpecularExponent();
+        float I_i = 1.0;
+        glm::vec3 k_d = k_a;
+        glm::vec3 k_s(1.0, 1.0, 1.0);
+        glm::vec3 l = glm::normalize(lightPos - curIntersectPos);
+        glm::vec3 r_vec = glm::reflect(-l, curNormal);
+        if (!intersectsShadow) {
+            c += k_s * I_i * static_cast<float>(pow(fmax(0, dot(r_vec, v)), p));
+            c += k_d * I_i * static_cast<float>(fmax(0, dot(curNormal, l)));
+            clamp(c);
+        }
     }
     return c;
 }
@@ -137,22 +153,22 @@ int main() {
 
     // TODO Set up camera, light etc.
     std::vector<Object*> myObjects;
-    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(0.75, 0.70, 0.75), true, false, 0.3);
-    Sphere sphereB(glm::vec3(1.0, 0.0, -5.5), 0.5, glm::vec3(0.0, 1.0, 0.5), false, false, 0.0);
-    Sphere sphereC(glm::vec3(-1.0, 0.5, -3.0), 0.2, glm::vec3(0.0f, 0.5, 1.0), false, false, 0.0);
-    Sphere sphereD(glm::vec3(-0.5f, -0.5f, -2.5f), 0.2, glm::vec3(1.0, 0.5, 0.5), false, false, 0.0);
+    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(1.0, 0.5, 0.0), false, 1.55);
+    Sphere sphereB(glm::vec3(1.0, 0.0, -5.5), 0.5, glm::vec3(0.0, 1.0, 0.5), false, AIR_REFRACTIVE_INDEX);
+    Sphere sphereC(glm::vec3(-1.0, 0.5, -3.0), 0.2, glm::vec3(0.0f, 0.5, 1.0), false, AIR_REFRACTIVE_INDEX);
+    Sphere sphereD(glm::vec3(-0.5f, -0.5f, -2.5f), 0.2, glm::vec3(1.0, 0.5, 0.5), false, AIR_REFRACTIVE_INDEX);
 
     myObjects.push_back(&sphereA);
     myObjects.push_back(&sphereB);
     myObjects.push_back(&sphereC);
     myObjects.push_back(&sphereD);
 
-    Plane planeA(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.75, 0.75, 0.75), true, false, 0.0);
-    Plane planeB(glm::vec3(-1.0, 0.0, 0.0), glm::vec3(2.0, 0.0, 0.0), glm::vec3(0.75, 0.75, 0.75), false, false, 0.0);
-    Plane planeC(glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 0.0, -10.0), glm::vec3(0.75, 0.75, 0.75), false, false, 0.0);
-    Plane planeD(glm::vec3(1.0, 0.0, 0.0), glm::vec3(-3.0, 0.0, 0.0), glm::vec3(0.75, 0.75, 0.75), false, false, 0.0);
-    Plane planeE(glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 2.5, 0.0), glm::vec3(0.75, 0.75, 0.75), false, false, 0.0);
-    Plane planeF(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 0.0, 2.0), glm::vec3(0.75, 0.75, 0.75), false, false, 0.0);
+    Plane planeA(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
+    Plane planeB(glm::vec3(-1.0, 0.0, 0.0), glm::vec3(2.0, 0.0, 0.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
+    Plane planeC(glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 0.0, -10.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
+    Plane planeD(glm::vec3(1.0, 0.0, 0.0), glm::vec3(-3.0, 0.0, 0.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
+    Plane planeE(glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 2.5, 0.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
+    Plane planeF(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 0.0, 2.0), glm::vec3(0.75, 0.75, 0.75), false,AIR_REFRACTIVE_INDEX);
 
     myObjects.push_back(&planeA);
     myObjects.push_back(&planeB);
