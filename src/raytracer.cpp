@@ -14,13 +14,12 @@
 
 #define _USE_MATH_DEFINES
 
-//const float AIR_REFRACTIVE_INDEX = 1.0003;
-double aspectRatio = 4.0 / 3.0;
+const double aspectRatio = 4.0 / 3.0;
 
-const auto e = glm::vec3(0.0, 0.0, 0.0);
-const auto cameraDirection = glm::vec3(0, 0, 1.0);
-const auto cameraUp = glm::vec3(0.0, 1.0, 0.0);
-const auto cameraRight = glm::cross(cameraUp, cameraDirection);
+const glm::vec3 e(0.0, 0.0, 0.0);
+const glm::vec3 cameraDirection(0, 0, 1.0);
+const glm::vec3 cameraUp(0.0, 1.0, 0.0);
+const glm::vec3  cameraRight = glm::cross(cameraUp, cameraDirection);
 //auto cameraRight = glm::vec3(-1.0, 0.0, 0.0);
 
 double top = tan(7*M_PI/72);
@@ -28,9 +27,10 @@ double bottom = -top;
 double right = top * aspectRatio;
 double left = -right;
 
-auto lightPos = e - cameraRight*static_cast<float>(1.9) + cameraUp*static_cast<float>(1.9) ;
+const glm::vec3 lightPos = e - cameraRight*static_cast<float>(1.9) + cameraUp*static_cast<float>(1.9) ;
 
-auto foo = glm::vec3(0.0, 0.0, 0.0);
+// Placeholder foo
+glm::vec3 foo = glm::vec3(0.0, 0.0, 0.0);
 
 // write PPM image file (input parameters: image width in px, image height in px, image data (vector of uint8 vec3), filename)
 bool writeP6PPM(unsigned int dX, unsigned int dY, std::vector<glm::u8vec3> img, std::string filename = "rtimage") {
@@ -151,9 +151,9 @@ int main() {
     int dimx = 800;
     int dimy = 600;
 
-    // TODO Set up camera, light etc.
     std::vector<Object*> myObjects;
-    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(1.0, 0.5, 0.0), false, 1.55);
+    std::vector<Object*> mySpheres;
+    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(1.0, 0.5, 0.0), false, 1.52);
     Sphere sphereB(glm::vec3(1.0, 0.0, -5.5), 0.5, glm::vec3(0.0, 1.0, 0.5), false, AIR_REFRACTIVE_INDEX);
     Sphere sphereC(glm::vec3(-1.0, 0.5, -3.0), 0.2, glm::vec3(0.0f, 0.5, 1.0), false, AIR_REFRACTIVE_INDEX);
     Sphere sphereD(glm::vec3(-0.5f, -0.5f, -2.5f), 0.2, glm::vec3(1.0, 0.5, 0.5), false, AIR_REFRACTIVE_INDEX);
@@ -177,6 +177,8 @@ int main() {
     myObjects.push_back(&planeE);
     myObjects.push_back(&planeF);
 
+    int numSpheres = 4;
+
 //    Object *mySphere = myObjects[0];
 //    std::cout << mySphere->intersect(foo, foo, foo, foo) << std::endl;
     //std::cout << myObjects[0]->intersect(foo, foo, foo, foo) << std::endl;
@@ -187,11 +189,11 @@ int main() {
     std::vector<glm::vec3> rayDirs;
     rayDirs.resize(dimx * dimy);
     // start time measurement
-//    auto start = std::chrono::high_resolution_clock::now();
-    // TODO Loop over all pixels
-    // TODO    Compute ray-object intersections etc.
-    // TODO    Store color per pixel in image vector
+    auto start = std::chrono::high_resolution_clock::now();
 
+    // TODO ASSIGNMENT 5 (Planes): Set k<myObjects.size() in intersection and shadow
+    // TODO ASSIGNMENT 6 (Reflection): Set Sphere A and Plane A to true
+    // TODO EC (Refraction): Reset AIR_REFRACTIVE_INDEX to 1.52
     for (int j = dimy-1; j >= 0; --j) {
         for (int i = 0; i < dimx; ++i) {
             // Calculate ray directions for each pixel
@@ -202,12 +204,117 @@ int main() {
             image[j*dimx + i] = static_cast<glm::u8vec3>(c*glm::vec3(255));
         }
     }
+
+
+    // TODO ASSIGNMENT 2: SPHERES
+//    for (int j = dimy-1; j >= 0; --j) {
+//        for (int i = 0; i < dimx; ++i) {
+//            // Calculate ray directions for each pixel
+//            auto u = glm::vec3(left + (right - left) * (i + 0.5) / dimx);
+//            auto v = glm::vec3(-bottom + (-top + bottom) * (j + 0.5) / dimy);
+//            auto r = glm::normalize(-cameraDirection + u * cameraRight + v * cameraUp - e);
+//            glm::vec3 intersectPos(0, 0, 0);
+//            glm::vec3 normal(0, 0, 0);
+//            glm::vec3 curIntersectPos(0, 0, 0);
+//            glm::vec3 curNormal(0, 0, 0);
+//            float min = 1000;
+//            int nearestObj = -1;
+//            bool intersects = false;
+//
+//            // Loop through spheres checking for intersection with ray direction
+//            for (int k = 0; k < numSpheres; k++) {
+//                float t = myObjects[k]->intersect("Intersection", e, r, intersectPos, normal);
+//                if (t > 0) {
+//                    intersects = true;
+//                    if (t < min) {
+//                        min = t;
+//                        nearestObj = k;
+//                        curIntersectPos = intersectPos;
+//                        curNormal = normal;
+//                    }
+//                }
+//            }
+//            glm::vec3 c(0.5, 0.0, 1.0);
+//            if (intersects) {
+//                c = myObjects[nearestObj]->Color();
+//            }
+//            image[j * dimx + i] = static_cast<glm::u8vec3>(c * glm::vec3(255));
+//        }
+//    }
+
+    // TODO ASSIGNMENT 3-4: SHADING & SHADOWS
+//    for (int j = dimy-1; j >= 0; --j) {
+//        for (int i = 0; i < dimx; ++i) {
+//            // Calculate ray directions for each pixel
+//            auto u = glm::vec3(left + (right - left) * (i + 0.5) / dimx);
+//            auto v = glm::vec3(-bottom + (-top + bottom) * (j + 0.5) / dimy);
+//            auto r = glm::normalize(-cameraDirection + u * cameraRight + v * cameraUp - e);
+//            glm::vec3 intersectPos(0, 0, 0);
+//            glm::vec3 normal(0, 0, 0);
+//            glm::vec3 curIntersectPos(0, 0, 0);
+//            glm::vec3 curNormal(0, 0, 0);
+//            float min = 1000;
+//            int nearestObj = -1;
+//            bool intersects = false;
+//
+//            // Loop through spheres checking for intersection with ray direction
+//            for (int k = 0; k < numSpheres; k++) {
+//                float t = myObjects[k]->intersect("Intersection", e, r, intersectPos, normal);
+//                if (t > 0) {
+//                    intersects = true;
+//                    if (t < min) {
+//                        min = t;
+//                        nearestObj = k;
+//                        curIntersectPos = intersectPos;
+//                        curNormal = normal;
+//                    }
+//                }
+//            }
+//            glm::vec3 c(0.5, 0.0, 1.0);
+//            if (intersects) {
+//                c = myObjects[nearestObj]->Color();
+//            }
+//
+//            // Display objects, add shading
+//            if (intersects) {
+//                bool intersectsShadow = false;
+//                 // Calculate Shadows
+//                 // TODO ASSIGNMENT 4: UNCOMMENT FROM HERE
+////                for (int k = 0; k < numSpheres; k++) {
+////                    if (k != nearestObj) {
+////                        glm::vec3 shadowRay = lightPos - curIntersectPos;
+////                        float t = myObjects[k]->intersect("Shadow", curIntersectPos, shadowRay, foo, foo);
+////                        if (t == 1) {
+////                            intersectsShadow = true;
+////                            break;
+////                        }
+////                    }
+////                }
+//                // TODO TO HERE FOR SHADOWS
+//                glm::vec3 k_a = c;
+//                c*=0.2;
+//                glm::vec3 v = glm::normalize(e - curIntersectPos);
+//                float p = myObjects[nearestObj]->SpecularExponent();
+//                float I_i = 1.0;
+//                glm::vec3 k_d = k_a;
+//                glm::vec3 k_s(1.0, 1.0, 1.0);
+//                glm::vec3 l = glm::normalize(lightPos - curIntersectPos);
+//                glm::vec3 r_vec = glm::reflect(-l, curNormal);
+//                if (!intersectsShadow) {
+//                    c += k_s * I_i * static_cast<float>(pow(fmax(0, dot(r_vec, v)), p));
+//                    c += k_d * I_i * static_cast<float>(fmax(0, dot(curNormal, l)));
+//                    clamp(c);
+//                }
+//            }
+//            image[j * dimx + i] = static_cast<glm::u8vec3>(c * glm::vec3(255));
+//        }
+//    }
+
+   // stop time
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    std::cout << "Total execution time in milliseconds: " << duration.count() << std::endl;
+
     // write image data to PPM file
     return writeP6PPM((unsigned int) dimx, (unsigned int) dimy, image);
-
-    // stop time
-//    auto stop = std::chrono::high_resolution_clock::now();
-//    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-//    std::cout << "Total execution time in milliseconds: " << duration.count() << std::endl;
-
 }

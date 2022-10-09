@@ -19,6 +19,9 @@ public:
         if (eta != AIR_REFRACTIVE_INDEX) {
             refract = true;
         }
+        else {
+            refract = false;
+        }
 
 	};
 	// intersection function: returns the closest intersection point with the given ray (or a negative value, if none exists)
