@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
 
+#include <omp.h>
+
 #include "object.h"
 
 #define _USE_MATH_DEFINES
@@ -20,8 +22,6 @@ const glm::vec3 e(0.0, 0.0, 0.0);
 const glm::vec3 cameraDirection(0, 0, 1.0);
 const glm::vec3 cameraUp(0.0, 1.0, 0.0);
 const glm::vec3  cameraRight = glm::cross(cameraUp, cameraDirection);
-//auto cameraRight = glm::vec3(-1.0, 0.0, 0.0);
-
 double top = tan(7*M_PI/72);
 double bottom = -top;
 double right = top * aspectRatio;
@@ -78,6 +78,7 @@ glm::vec3 traceRay(std::vector<Object*> myObjects, glm::vec3 origin, glm::vec3 r
     bool intersects = false;
 
     // Loop through spheres checking for intersection with ray direction
+    
     for (int k = 0; k < myObjects.size(); k++) {
         float t = myObjects[k]->intersect("Intersection", origin, rayDir, intersectPos, normal);
         if (t > 0) {
@@ -116,16 +117,16 @@ glm::vec3 traceRay(std::vector<Object*> myObjects, glm::vec3 origin, glm::vec3 r
         if (myObjects[nearestObj]->Refract()) {
             // Assume refractive index of air is 1
             float eta = 1/myObjects[nearestObj]->refractIndex();
-            glm::vec3 I = glm::normalize( curIntersectPos - origin);
+            glm::vec3 I = -glm::normalize( origin - curIntersectPos);
             float a = 1-pow(eta,2)*(1-pow(dot(curNormal,I),2));
-            if (a < 0) {
+            if (a < 0) { // Total Internal Reflection
                 glm::vec3 internalReflectedRay = glm::reflect(I, curNormal);
-                c *= traceRay(myObjects, curIntersectPos+0.00001f*internalReflectedRay, internalReflectedRay, depth+1);
+                c = traceRay(myObjects, curIntersectPos+0.00001f*internalReflectedRay, internalReflectedRay, depth+1);
             }
-            else {
+            else { // Refraction
                 a = pow(a,0.5);
                 glm::vec3 refractedRay = (eta*dot(curNormal,I)-a)*curNormal-(eta*I);
-                c *= traceRay(myObjects, curIntersectPos+0.00001f*refractedRay, refractedRay, depth+1);
+                c = traceRay(myObjects, curIntersectPos+0.00001f*refractedRay, refractedRay, depth+1);
             }
         }
         glm::vec3 k_a = c;
@@ -153,7 +154,7 @@ int main() {
 
     std::vector<Object*> myObjects;
     std::vector<Object*> mySpheres;
-    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(1.0, 0.5, 0.0), false, 1.52);
+    Sphere sphereA(glm::vec3(0.0, 0.0, -5.0), 0.75, glm::vec3(1.0, 0.5, 0.0), false, 1.04);
     Sphere sphereB(glm::vec3(1.0, 0.0, -5.5), 0.5, glm::vec3(0.0, 1.0, 0.5), false, AIR_REFRACTIVE_INDEX);
     Sphere sphereC(glm::vec3(-1.0, 0.5, -3.0), 0.2, glm::vec3(0.0f, 0.5, 1.0), false, AIR_REFRACTIVE_INDEX);
     Sphere sphereD(glm::vec3(-0.5f, -0.5f, -2.5f), 0.2, glm::vec3(1.0, 0.5, 0.5), false, AIR_REFRACTIVE_INDEX);
@@ -163,7 +164,7 @@ int main() {
     myObjects.push_back(&sphereC);
     myObjects.push_back(&sphereD);
 
-    Plane planeA(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
+    Plane planeA(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.75, 0.75, 0.75), true, AIR_REFRACTIVE_INDEX);
     Plane planeB(glm::vec3(-1.0, 0.0, 0.0), glm::vec3(2.0, 0.0, 0.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
     Plane planeC(glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 0.0, -10.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
     Plane planeD(glm::vec3(1.0, 0.0, 0.0), glm::vec3(-3.0, 0.0, 0.0), glm::vec3(0.75, 0.75, 0.75), false, AIR_REFRACTIVE_INDEX);
@@ -191,22 +192,20 @@ int main() {
     // start time measurement
     auto start = std::chrono::high_resolution_clock::now();
 
-    // TODO ASSIGNMENT 5 (Planes): Set k<myObjects.size() in intersection and shadow
-    // TODO ASSIGNMENT 6 (Reflection): Set Sphere A and Plane A to true
-    // TODO EC (Refraction): Reset AIR_REFRACTIVE_INDEX to 1.52
-    for (int j = dimy-1; j >= 0; --j) {
-        for (int i = 0; i < dimx; ++i) {
-            // Calculate ray directions for each pixel
-            auto u = glm::vec3(left + (right-left)*(i+0.5)/dimx);
-            auto v = glm::vec3(-bottom + (-top+bottom)*(j+0.5)/dimy);
-            auto r = glm::normalize(-cameraDirection + u*cameraRight + v*cameraUp - e);
-            glm::vec3 c = traceRay(myObjects, e, r, 0);
-            image[j*dimx + i] = static_cast<glm::u8vec3>(c*glm::vec3(255));
-        }
-    }
+    // ASSIGNMENT 1 (RAY VIEWS)
+//
+//        for (int j = dimy-1; j >= 0; --j) {
+//        for (int i = 0; i < dimx; ++i) {
+//            // Calculate ray directions for each pixel
+//            auto u = glm::vec3(left + (right-left)*(i+0.5)/dimx);
+//            auto v = glm::vec3(-bottom + (-top+bottom)*(j+0.5)/dimy);
+//            auto r = glm::normalize(-cameraDirection + u*cameraRight + v*cameraUp - e);
+//            //glm::vec3 c = traceRay(myObjects, e, r, 0);
+//            image[j*dimx + i] = static_cast<glm::u8vec3>(r*glm::vec3(255));
+//        }
+//    }
 
-
-    // TODO ASSIGNMENT 2: SPHERES
+    // ASSIGNMENT 2: SPHERES
 //    for (int j = dimy-1; j >= 0; --j) {
 //        for (int i = 0; i < dimx; ++i) {
 //            // Calculate ray directions for each pixel
@@ -242,7 +241,7 @@ int main() {
 //        }
 //    }
 
-    // TODO ASSIGNMENT 3-4: SHADING & SHADOWS
+//     ASSIGNMENT 3-4: SHADING & SHADOWS
 //    for (int j = dimy-1; j >= 0; --j) {
 //        for (int i = 0; i < dimx; ++i) {
 //            // Calculate ray directions for each pixel
@@ -279,7 +278,7 @@ int main() {
 //            if (intersects) {
 //                bool intersectsShadow = false;
 //                 // Calculate Shadows
-//                 // TODO ASSIGNMENT 4: UNCOMMENT FROM HERE
+//                 // ASSIGNMENT 4: UNCOMMENT FROM HERE
 ////                for (int k = 0; k < numSpheres; k++) {
 ////                    if (k != nearestObj) {
 ////                        glm::vec3 shadowRay = lightPos - curIntersectPos;
@@ -290,7 +289,7 @@ int main() {
 ////                        }
 ////                    }
 ////                }
-//                // TODO TO HERE FOR SHADOWS
+//                // TO HERE FOR SHADOWS
 //                glm::vec3 k_a = c;
 //                c*=0.2;
 //                glm::vec3 v = glm::normalize(e - curIntersectPos);
@@ -309,6 +308,21 @@ int main() {
 //            image[j * dimx + i] = static_cast<glm::u8vec3>(c * glm::vec3(255));
 //        }
 //    }
+
+
+    // ASSIGNMENT 5 (Planes): Set k<myObjects.size() in intersection and shadow
+    // ASSIGNMENT 6 (Reflection): Set Sphere A and Plane A to true
+    // EC (Refraction): Reset AIR_REFRACTIVE_INDEX to 1.52
+    for (int j = dimy - 1; j >= 0; --j) {
+            for (int i = 0; i < dimx; ++i) {
+                // Calculate ray directions for each pixel
+                auto u = glm::vec3(left + (right - left) * (i + 0.5) / dimx);
+                auto v = glm::vec3(-bottom + (-top + bottom) * (j + 0.5) / dimy);
+                auto r = glm::normalize(-cameraDirection + u * cameraRight + v * cameraUp - e);
+                glm::vec3 c = traceRay(myObjects, e, r, 0);
+                image[j * dimx + i] = static_cast<glm::u8vec3>(c * glm::vec3(255));
+            }
+        }
 
    // stop time
     auto stop = std::chrono::high_resolution_clock::now();
