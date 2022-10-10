@@ -21,5 +21,5 @@ assignment-2-ray-tracer-tangyubei created by GitHub Classroom
 ![Reflection](https://user-images.githubusercontent.com/34821850/194738818-64012185-b945-4ec0-9e4a-0c7b0a96e358.png)
 
 ## Refraction
-![Refraction-1](https://user-images.githubusercontent.com/34821850/194739173-24d7202a-c2a9-4ef8-acfe-ab2156a49d71.png)
-![Refraction-2](https://user-images.githubusercontent.com/34821850/194739174-2496c035-4f06-41b2-a3fb-8f2709143279.png)
+
+![Refraction-2](https://user-images.githubusercontent.com/34821850/194789958-9030e34d-9f6d-4a39-83c0-d3b61bca5a70.png)
